@@ -1,29 +1,70 @@
-import React from "react"
+import React, { useRef } from "react"
 import InputBox from "../components/input.component"
 import googleIcon from "../imgs/google.png"
 import { Link } from "react-router-dom"
 import AnimationWrapper from "../common/page-animation"
 
 const UserAuthForm = ({ type }) => {
+  const authForm = useRef()
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+
+    let form = new FormData(authForm.current)
+    let formData = {}
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+
+    for (let [key, value] of form.entries()) {
+      formData[key] = value
+    }
+
+    let { fullname, email, password } = formData;
+
+    if(fullname){
+      if (fullname.length < 3) {
+        return console.log({ message: "Fullname must be at least 3 characters" });
+      } 
+    }
+
+    if(!email.length) {
+      return console.log({ message: "Email is required" });
+    }
+      
+    if(!password.length) {
+      return console.log({ message: "Password is required" });
+    }
+
+    if (!emailRegex.test(email)) {
+      return console.log({ message: "Invalid email" });
+    }
+
+    if (!passwordRegex.test(password)) {
+      return console.log({
+          message:
+            "Password must contain at least one number and one uppercase and lowercase letter, and at least 6 or more characters",
+        })
+    }
+  }
+
   return (
     <div>
       <AnimationWrapper keyValue={type}>
         <section className="h-cover flex items-center justify-center">
-          <form action="" className="w-[80%] max-w-[400px]">
+          <form ref={authForm} className="w-[80%] max-w-[400px]">
             <h1 className="text-4xl font-gelasio capitalize text-center">
               {type === "sign-in" ? "Welcome back!" : "Join us today!"}
             </h1>
 
-            {type != "sign-in" ? (
+            { type != "sign-in" ?
               <InputBox
                 name="fullname"
                 type="text"
                 placeholder="Full Name"
                 icon="fi-rr-user"
               />
-            ) : (
-              ""
-            )}
+            : ""}
             <InputBox
               name="email"
               type="email"
@@ -37,7 +78,11 @@ const UserAuthForm = ({ type }) => {
               icon="fi-rr-key"
             />
 
-            <button className="btn-dark center mt-14" type="submit">
+            <button
+              className="btn-dark center mt-14"
+              type="submit"
+              onClick={handleSubmit}
+            >
               {type.replace("-", " ")}
             </button>
 
