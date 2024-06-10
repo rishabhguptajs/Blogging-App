@@ -1,50 +1,49 @@
-import React, { useRef } from "react"
+import React, { useRef, useState } from "react"
 import InputBox from "../components/input.component"
 import googleIcon from "../imgs/google.png"
 import { Link } from "react-router-dom"
 import AnimationWrapper from "../common/page-animation"
 
 const UserAuthForm = ({ type }) => {
-  const authForm = useRef()
+  const [authForm, setAuthForm] = useState(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/
 
-    let form = new FormData(authForm.current)
-    let formData = {}
+    console.log(type)
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+    const formData = new FormData(e.target)
 
-    for (let [key, value] of form.entries()) {
-      formData[key] = value
+    const fullname = formData.get("fullname")
+    const email = formData.get("email")
+    const password = formData.get("password")
+
+    if (type !== "sign-in" && !fullname.length) {
+      return console.log({ message: "Fullname is required" })
     }
 
-    let { fullname, email, password } = formData;
-
-    if(fullname){
-      if (fullname.length < 3) {
-        return console.log({ message: "Fullname must be at least 3 characters" });
-      } 
+    if (fullname) {
+      if (!fullname.length) {
+        return console.log({ message: "Fullname is required" })
+      }
     }
 
-    if(!email.length) {
-      return console.log({ message: "Email is required" });
-    }
-      
-    if(!password.length) {
-      return console.log({ message: "Password is required" });
+    if (!email.length) {
+      return console.log({ message: "Email is required" })
     }
 
     if (!emailRegex.test(email)) {
-      return console.log({ message: "Invalid email" });
+      return console.log({ message: "Invalid email" })
     }
 
     if (!passwordRegex.test(password)) {
       return console.log({
-          message:
-            "Password must contain at least one number and one uppercase and lowercase letter, and at least 6 or more characters",
-        })
+        message:
+          "Password must contain at least one number and one uppercase and lowercase letter, and at least 6 or more characters",
+      })
     }
   }
 
@@ -52,19 +51,25 @@ const UserAuthForm = ({ type }) => {
     <div>
       <AnimationWrapper keyValue={type}>
         <section className="h-cover flex items-center justify-center">
-          <form ref={authForm} className="w-[80%] max-w-[400px]">
+          <form
+            ref={(node) => setAuthForm(node)}
+            onSubmit={handleSubmit}
+            className="w-[80%] max-w-[400px]"
+          >
             <h1 className="text-4xl font-gelasio capitalize text-center">
               {type === "sign-in" ? "Welcome back!" : "Join us today!"}
             </h1>
 
-            { type != "sign-in" ?
+            {type != "sign-in" ? (
               <InputBox
                 name="fullname"
                 type="text"
                 placeholder="Full Name"
                 icon="fi-rr-user"
               />
-            : ""}
+            ) : (
+              ""
+            )}
             <InputBox
               name="email"
               type="email"
@@ -78,11 +83,7 @@ const UserAuthForm = ({ type }) => {
               icon="fi-rr-key"
             />
 
-            <button
-              className="btn-dark center mt-14"
-              type="submit"
-              onClick={handleSubmit}
-            >
+            <button className="btn-dark center mt-14" type="submit">
               {type.replace("-", " ")}
             </button>
 

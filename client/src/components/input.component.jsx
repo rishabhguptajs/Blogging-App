@@ -1,6 +1,6 @@
-import React, { useState, forwardRef } from 'react'
+import React, { useState } from 'react'
 
-const InputBox = forwardRef(({ name, type, id, value, placeholder, icon }, ref) => {
+const InputBox = ({ name, type, id, value, placeholder, icon }) => {
     const [passwordVisible, setPasswordVisible] = useState(false)
 
     return (
@@ -14,7 +14,6 @@ const InputBox = forwardRef(({ name, type, id, value, placeholder, icon }, ref) 
                 defaultValue={value}
                 placeholder={placeholder}
                 className='input-box'
-                ref={ref}
             />
 
             <i className={"fi " + icon + " input-icon"}></i>
@@ -28,6 +27,6 @@ const InputBox = forwardRef(({ name, type, id, value, placeholder, icon }, ref) 
             }
         </div>
     )
-})
+}
 
 export default InputBox
