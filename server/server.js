@@ -5,6 +5,8 @@ import User from './Schema/User.js';
 import connectDB from './config/db.js';
 import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken'
+import cors from 'cors'
+import multer from 'multer'
 
 const app = express()
 
@@ -12,6 +14,10 @@ dotenv.config();
 connectDB();
 
 app.use(json())
+app.use(cors())
+
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
@@ -39,9 +45,11 @@ const formatDataToSend = (user) => {
     }
 }
 
-app.post('/signup', async(req, res) => {
+app.post('/signup', upload.none(), async(req, res) => {
     try {
         const { fullname, email, password } = req.body;
+
+        console.log(req.body)
 
         if (!fullname || !email || !password) {
             return res.status(400).json({message: "All fields are required"})
@@ -66,7 +74,7 @@ app.post('/signup', async(req, res) => {
         }
 
         const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         let username = await generateUsername(email);
 
@@ -94,7 +102,7 @@ app.post('/signup', async(req, res) => {
     }
 })
 
-app.post('/login', async(req, res) => {
+app.post('/login', upload.none(), async(req, res) => {
     try {
         const { email, password } = req.body;
 
