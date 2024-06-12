@@ -7,6 +7,9 @@ import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken'
 import cors from 'cors'
 import multer from 'multer'
+import admin from 'firebase-admin'
+import { getAuth } from 'firebase-admin/auth'
+import serviceAccountKey from './blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };   
 
 const app = express()
 
@@ -22,14 +25,18 @@ const upload = multer({ storage: storage })
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
 
-const generateUsername = async(email) => {
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccountKey)
+})
+
+const generateUsername = async (email) => {
     const username = email.split('@')[0];
 
     const checkUser = await User.findOne({ "personal_info.username": username });
 
     if (checkUser) {
         return `${username}${nanoid(5)}`
-    }    else {
+    } else {
         return username;
     }
 }
@@ -45,32 +52,32 @@ const formatDataToSend = (user) => {
     }
 }
 
-app.post('/signup', upload.none(), async(req, res) => {
+app.post('/signup', upload.none(), async (req, res) => {
     try {
         const { fullname, email, password } = req.body;
 
         console.log(req.body)
 
         if (!fullname || !email || !password) {
-            return res.status(400).json({message: "All fields are required"})
+            return res.status(400).json({ message: "All fields are required" })
         }
 
-        if(fullname.length < 3) {
-            return res.status(403).json({message: "Fullname must be at least 3 characters"})
+        if (fullname.length < 3) {
+            return res.status(403).json({ message: "Fullname must be at least 3 characters" })
         }
 
         if (!emailRegex.test(email)) {
-            return res.status(403).json({message: "Invalid email"})
+            return res.status(403).json({ message: "Invalid email" })
         }
 
         if (!passwordRegex.test(password)) {
-            return res.status(403).json({message: "Password must contain at least one number and one uppercase and lowercase letter, and at least 6 or more characters"})
+            return res.status(403).json({ message: "Password must contain at least one number and one uppercase and lowercase letter, and at least 6 or more characters" })
         }
 
         const checkUser = await User.findOne({ "personal_info.email": email });
 
         if (checkUser) {
-            return res.status(403).json({message: "User already exists"})
+            return res.status(403).json({ message: "User already exists" })
         }
 
         const salt = bcrypt.genSaltSync(10);
@@ -102,24 +109,28 @@ app.post('/signup', upload.none(), async(req, res) => {
     }
 })
 
-app.post('/login', upload.none(), async(req, res) => {
+app.post('/login', upload.none(), async (req, res) => {
     try {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({message: "All fields are required"})
+            return res.status(400).json({ message: "All fields are required" })
         }
 
         const user = await User.findOne({ "personal_info.email": email });
 
         if (!user) {
-            return res.status(403).json({message: "User not found"})
+            return res.status(403).json({ message: "User not found" })
+        }
+
+        if(user.google_auth) {
+            return res.status(403).json({ message: "This email was signed up with google. Please log in with google" })
         }
 
         const isPasswordValid = bcrypt.compare(password, user.personal_info.password);
 
         if (!isPasswordValid) {
-            return res.status(403).json({message: "Invalid password"})
+            return res.status(403).json({ message: "Invalid password" })
         }
 
         res.status(200).json({
@@ -133,6 +144,60 @@ app.post('/login', upload.none(), async(req, res) => {
             error: error.message
         })
     }
+})
+
+app.post("/google-auth", upload.none(), async (req, res) => {
+    let { access_token } = req.body;
+
+    getAuth()
+        .verifyIdToken(access_token)
+        .then(async (decodedUser) => {
+            let { email, name, picture } = decodedUser;
+
+            picture = picture.replace('s96-c', 's384-c');
+
+            let user = await User.findOne({ "personal_info.email": email }).select("personal_info.fullname personal_info.profile_img personal_info.username google_auth").then((user) => {
+                return user || null;
+            })
+                .catch((error) => {
+                    return res.status(500).json({ message: "Error logging in", error: error.message })
+                })
+
+            if (user) {
+                if (!user.google_auth) {
+                    return res.status(403).json({ message: "This email was signed up without google. Please log in using email and password" })
+                }
+
+                return res.status(200).json({
+                    message: "User logged in successfully",
+                    user: formatDataToSend(user)
+                })
+            } else {
+                let username = await generateUsername(email);
+
+                user = new User({
+                    personal_info: {
+                        fullname: name,
+                        email,
+                        profile_img: picture,
+                        username
+                    },
+                    google_auth: true
+                })
+
+                await user.save().then((u) => {
+                    user = u;
+                })
+                    .catch((error) => {
+                        return res.status(500).json({ message: "Error logging in", error: error.message })
+                    })
+            }
+
+            return res.status(200).json(formatDataToSend(user))
+        })
+        .catch((error) => {
+            return res.status(500).json({ message: "Failed to authenticate with google, try with another account!", error: error.message })
+        })
 })
 
 const PORT = 8080;

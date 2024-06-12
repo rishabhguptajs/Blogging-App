@@ -1,17 +1,31 @@
-import React, { useContext, useState } from "react"
-import { Link, Outlet } from "react-router-dom"
-import logo from "../imgs/logo.png"
-import { UserContext } from "../App"
-import UserNavigationPanel from "./user-navigation.component"
+import React, { useContext, useState, useRef, useEffect } from "react";
+import { Link, Outlet } from "react-router-dom";
+import logo from "../imgs/logo.png";
+import { UserContext } from "../App";
+import UserNavigationPanel from "./user-navigation.component";
 
 const Navbar = () => {
-  const [searchBoxVisibility, setSearchBoxVisibility] = useState(false)
-  const [userNavPanel, setUserNavPanel] = useState(false)
+  const [searchBoxVisibility, setSearchBoxVisibility] = useState(false);
+  const [userNavPanel, setUserNavPanel] = useState(false);
+  const userNavRef = useRef(null);
 
   const {
     userAuth,
     userAuth: { access_token, profile_img },
-  } = useContext(UserContext)
+  } = useContext(UserContext);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userNavRef.current && !userNavRef.current.contains(event.target)) {
+        setUserNavPanel(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <>
@@ -56,20 +70,15 @@ const Navbar = () => {
                 </button>
               </Link>
 
-              <div className="relative">
-                <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10"
+              <div className="relative" ref={userNavRef}>
+                <button
+                  className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10"
                   onClick={() => setUserNavPanel(!userNavPanel)}
-                  onBlur={() => setUserNavPanel(false)}
                 >
                   <img src={profile_img} className="w-full h-full object-cover rounded-full" />
                 </button>
 
-                {
-                  userNavPanel ? (
-                    <UserNavigationPanel />
-                  ) : ""
-                }
-
+                {userNavPanel && <UserNavigationPanel onClose={() => setUserNavPanel(false)} />}
               </div>
             </>
           ) : (
@@ -86,7 +95,7 @@ const Navbar = () => {
       </nav>
       <Outlet />
     </>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;
