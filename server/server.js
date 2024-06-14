@@ -9,7 +9,7 @@ import cors from 'cors'
 import multer from 'multer'
 import admin from 'firebase-admin'
 import { getAuth } from 'firebase-admin/auth'
-import serviceAccountKey from './blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };   
+import serviceAccountKey from './blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };
 
 const app = express()
 
@@ -26,8 +26,60 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccountKey)
-})
+    credential: admin.credential.cert(serviceAccountKey),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+});
+
+const generateUploadURL = async (file) => {
+    const bucket = admin.storage().bucket();
+    const blob = bucket.file(file.originalname);
+    const token = nanoid(124);
+
+    const metadata = {
+        metadata: {
+            firebaseStorageDownloadTokens: token,
+        },
+        contentType: file.mimetype,
+        cacheControl: 'public, max-age=31536000',
+    };
+
+    return new Promise((resolve, reject) => {
+        const blobStream = blob.createWriteStream({ metadata });
+
+        blobStream.on('error', (error) => {
+            reject(error);
+        });
+
+        blobStream.on('finish', () => {
+            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(blob.name)}?alt=media&token=${token}`;
+            resolve(imageUrl);
+        });
+
+        blobStream.end(file.buffer);
+    });
+};
+
+app.get('/get-upload-url', upload.single('file'), async (req, res) => {
+    try {
+        console.log('Received request:', req.body);
+        console.log('Received file:', req.file);
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const url = await generateUploadURL(req.file);
+
+        if (!url) {
+            return res.status(500).json({ message: 'Failed to generate upload URL' });
+        }
+
+        res.status(200).json({ uploadURL: url });
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        res.status(500).json({ message: 'Failed to upload image', error: error.message });
+    }
+});
 
 const generateUsername = async (email) => {
     const username = email.split('@')[0];
@@ -123,7 +175,7 @@ app.post('/login', upload.none(), async (req, res) => {
             return res.status(403).json({ message: "User not found" })
         }
 
-        if(user.google_auth) {
+        if (user.google_auth) {
             return res.status(403).json({ message: "This email was signed up with google. Please log in with google" })
         }
 
