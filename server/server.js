@@ -59,7 +59,7 @@ const generateUploadURL = async (file) => {
     });
 };
 
-app.get('/get-upload-url', upload.single('file'), async (req, res) => {
+app.post('/get-upload-url', upload.single('file'), async (req, res) => {
     try {
         console.log('Received request:', req.body);
         console.log('Received file:', req.file);
