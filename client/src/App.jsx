@@ -14,7 +14,7 @@ const App = () => {
     const userInSession = lookInSession("user");
     const parsedUser = userInSession ? JSON.parse(userInSession) : { access_token: null };
 
-    console.log(parsedUser);
+    console.log("Pased user: ", parsedUser);
 
     setUserAuth(parsedUser);
   }, [])

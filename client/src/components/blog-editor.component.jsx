@@ -12,15 +12,15 @@ import { uploadImage } from "../common/firestore"
 
 const BlogEditor = () => {
   let blogBannerRef = useRef()
-  let { blog, blog: { title, banner, content, tags, des }, setBlog } = useContext(EditorContext);   
+  let { blog, blog: { title, banner, content, tags, des }, setBlog, textEditor, setTextEditor, setEditorState } = useContext(EditorContext);   
 
   useEffect(() => {
-    let editor = new EditorJS({
+    setTextEditor(new EditorJS({
         holder: "textEditor",
-        data: '',
+        data: content,
         tools: tools,
         placeholder: 'Start writing now!'
-    })
+    }))
 
   }, [])
 
@@ -67,6 +67,32 @@ const BlogEditor = () => {
     setBlog({ ...blog, title: input.value })
   }
 
+  const handlePublishEvent = () => {
+
+    if(!banner.length){
+      return toast.error("Please upload a banner to publish the blog.");
+    }
+
+    if(!title.length){
+      return toast.error("Write a title for the blog first.");
+    }
+
+    if(textEditor.isReady){
+      textEditor.save().then(data => {
+        if(data.blocks.length){
+          setBlog({ ...blog, content: data });
+          setEditorState("publish")
+        } else {
+          toast.error("Write some content to publish the blog.");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        toast.error("Failed to save blog content. Please try again.")
+      })
+    }
+  }
+
   return (
     <>
       <nav className="navbar">
@@ -77,7 +103,7 @@ const BlogEditor = () => {
             { title.length ? title: "New Blog" }
         </p>
         <div className="flex gap-4 ml-auto">
-          <button className="btn-dark py-2">Publish</button>
+          <button className="btn-dark py-2" onClick={handlePublishEvent}>Publish</button>
           <button className="btn-light py-2">Save Draft</button>
         </div>
       </nav>
@@ -87,7 +113,13 @@ const BlogEditor = () => {
           <div className="mx-auto max-w-[900px] w-full">
             <div className="relative aspect-video hover:opacity-80 bg-white border-4 border-grey">
               <label htmlFor="uploadBanner">
-                <img src={defaultBanner} className="z-20" ref={blogBannerRef} />
+                <img 
+                src= {
+                    banner.length ? banner : defaultBanner
+                }
+                className="z-20" 
+                ref={blogBannerRef} 
+                />
                 <input
                   id="uploadBanner"
                   type="file"
@@ -99,6 +131,7 @@ const BlogEditor = () => {
             </div>
 
             <textarea 
+                defaultValue={title}
                 placeholder="Blog Title"
                 className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40"
                 onKeyDown={handleTitleKeyDown}

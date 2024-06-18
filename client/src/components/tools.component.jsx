@@ -8,21 +8,20 @@ import InlineCode from "@editorjs/inline-code"
 import { uploadImage } from "../common/firestore"
 
 const uploadImagebyFile = async (file) => {
-    try {
-      const res = await uploadImage(file);
-      return {
-        success: 1,
-        file: { url: res.uploadURL }, // Adjusted to use res.uploadURL
-      };
-    } catch (error) {
-      console.error("Image upload failed", error);
-      return {
-        success: 0,
-        message: error.message,
-      };
-    }
-  };
-  
+  try {
+    const res = await uploadImage(file);
+    return {
+      success: 1,
+      file: { url: res.uploadURL }, 
+    };
+  } catch (error) {
+    console.error("Image upload failed", error);
+    return {
+      success: 0,
+      message: error.message,
+    };
+  }
+};
 
 const uploadImageByURL = (e) => {
   let link = new Promise((resolve, reject) => {
@@ -51,8 +50,7 @@ export const tools = {
     class: Image,
     config: {
       uploader: {
-        uploadByUrl: uploadImageByURL,
-        uploadByFile: uploadImagebyFile,
+        uploadByUrl: uploadImageByURL
       },
     },
   },
