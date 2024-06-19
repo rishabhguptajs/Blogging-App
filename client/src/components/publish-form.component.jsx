@@ -48,7 +48,7 @@ const PublishForm = () => {
       if (tag && tags.length < tagLimit) {
         if (!tags.includes(tag)) {
           setBlog({ ...blog, tags: [...tags, tag] })
-          setTagInput('') // Clear the input field after adding the tag
+          setTagInput('')
         } else {
           toast.error("Tag already exists")
         }
@@ -128,9 +128,15 @@ const PublishForm = () => {
             />
 
             {tags.map((tag, i) => (
-              <Tag tag={tag} key={i} />
+              <Tag tag={tag} tagIndex={i} key={i} />
             ))}
           </div>
+
+          <p className="mt-1 mb-4 text-dark-grey text-right"> { tagLimit - tags.length } Tags left</p>
+
+          <button className="btn-dark px-8">
+            Publish
+          </button>
         </div>
       </section>
     </AnimationWrapper>
