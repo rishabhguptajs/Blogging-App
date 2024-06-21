@@ -10,6 +10,7 @@ import multer from 'multer'
 import admin from 'firebase-admin'
 import { getAuth } from 'firebase-admin/auth'
 import serviceAccountKey from './blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };
+import Blog from './Schema/Blog.js';
 
 const app = express()
 
@@ -107,6 +108,7 @@ const verifyJWT = (req, res, next) => {
         }
 
         req.user = user.id
+        next()
     })
 }
 
@@ -270,7 +272,59 @@ app.post("/google-auth", upload.none(), async (req, res) => {
 })
 
 app.post('/create-blog', verifyJWT, (req, res) => {
-    return res.json(req.body);
+    let authorId = req.user;
+
+    let { title, des, banner, tags, content, draft } = req.body;
+
+    if(!title.length){
+        return res.status(403).json({ error: "You must provide a title to publish the blog." })
+    }
+
+    if(!des.length || des.length > 200){
+        return res.status(403).json({ error: "You must provide blog description under 200 characters." })
+    }
+
+    if(!banner.length){
+        return res.status(403).json({ error: "You must provide blog banner to publish it." })
+    }
+
+    if(!content.blocks.length){
+        return res.status(403).json({ error: "Write some content in the blog to publish it." })
+    }
+
+    if(!tags.length || tags.length > 10){
+        return res.status(403).json({ error: "Provide a maximum of 10 tags to publish the blog." })
+    }
+
+    tags = tags.map(tag => tag.toLowerCase());
+
+    let blog_id = title.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, "-").trim() + nanoid();
+
+    let blog = new Blog({
+        title,
+        des,
+        banner,
+        content,
+        tags,
+        author: authorId,
+        blog_id,
+        draft: Boolean(draft)
+    })
+
+    blog.save().then(blog => {
+        let incrementVal = draft ? 0 : 1;
+
+        User.findOneAndUpdate({ _id: authorId }, { $inc: { "account_info.total_posts": incrementVal }, $push: { "blogs": blog._id } })
+        .then(user => {
+            return res.status(200).json({ id: blog.blog_id })
+        })
+        .catch(err => {
+            return res.status(500).json({ error: "Failed to update total posts number." })
+        })
+    })
+    .catch(err => {
+        return res.status(500).json({ error: err.message })
+    })
 })
 
 const PORT = 8080;
