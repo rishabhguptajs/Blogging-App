@@ -93,6 +93,23 @@ const generateUsername = async (email) => {
     }
 }
 
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if(token == null){
+        return res.status(401).json({ error: "Now access token!" });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if(err){
+            return res.status(403).json({ error: "Access token is invalid!" })
+        }
+
+        req.user = user.id
+    })
+}
+
 const formatDataToSend = (user) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
@@ -250,6 +267,10 @@ app.post("/google-auth", upload.none(), async (req, res) => {
         .catch((error) => {
             return res.status(500).json({ message: "Failed to authenticate with google, try with another account!", error: error.message })
         })
+})
+
+app.post('/create-blog', verifyJWT, (req, res) => {
+    return res.json(req.body);
 })
 
 const PORT = 8080;
