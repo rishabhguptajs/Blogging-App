@@ -98,12 +98,12 @@ const verifyJWT = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
 
-    if(token == null){
+    if (token == null) {
         return res.status(401).json({ error: "Now access token!" });
     }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if(err){
+        if (err) {
             return res.status(403).json({ error: "Access token is invalid!" })
         }
 
@@ -276,24 +276,26 @@ app.post('/create-blog', verifyJWT, (req, res) => {
 
     let { title, des, banner, tags, content, draft } = req.body;
 
-    if(!title.length){
-        return res.status(403).json({ error: "You must provide a title to publish the blog." })
+    if (!title.length) {
+        return res.status(403).json({ error: "You must provide a title." })
     }
 
-    if(!des.length || des.length > 200){
-        return res.status(403).json({ error: "You must provide blog description under 200 characters." })
-    }
+    if (!draft) {
+        if (!des.length || des.length > 200) {
+            return res.status(403).json({ error: "You must provide blog description under 200 characters." })
+        }
 
-    if(!banner.length){
-        return res.status(403).json({ error: "You must provide blog banner to publish it." })
-    }
+        if (!banner.length) {
+            return res.status(403).json({ error: "You must provide blog banner to publish it." })
+        }
 
-    if(!content.blocks.length){
-        return res.status(403).json({ error: "Write some content in the blog to publish it." })
-    }
+        if (!content.blocks.length) {
+            return res.status(403).json({ error: "Write some content in the blog to publish it." })
+        }
 
-    if(!tags.length || tags.length > 10){
-        return res.status(403).json({ error: "Provide a maximum of 10 tags to publish the blog." })
+        if (!tags.length || tags.length > 10) {
+            return res.status(403).json({ error: "Provide a maximum of 10 tags to publish the blog." })
+        }
     }
 
     tags = tags.map(tag => tag.toLowerCase());
@@ -315,16 +317,16 @@ app.post('/create-blog', verifyJWT, (req, res) => {
         let incrementVal = draft ? 0 : 1;
 
         User.findOneAndUpdate({ _id: authorId }, { $inc: { "account_info.total_posts": incrementVal }, $push: { "blogs": blog._id } })
-        .then(user => {
-            return res.status(200).json({ id: blog.blog_id })
-        })
+            .then(user => {
+                return res.status(200).json({ id: blog.blog_id })
+            })
+            .catch(err => {
+                return res.status(500).json({ error: "Failed to update total posts number." })
+            })
+    })
         .catch(err => {
-            return res.status(500).json({ error: "Failed to update total posts number." })
+            return res.status(500).json({ error: err.message })
         })
-    })
-    .catch(err => {
-        return res.status(500).json({ error: err.message })
-    })
 })
 
 const PORT = 8080;
