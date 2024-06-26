@@ -16,8 +16,6 @@ const UserAuthForm = ({ type }) => {
     setUserAuth,
   } = useContext(UserContext)
 
-  console.log(access_token)
-
   const useAuthThroughServer = (serverRoute, formData) => {
     axios
       .post(import.meta.env.VITE_SERVER_URL + serverRoute, formData)

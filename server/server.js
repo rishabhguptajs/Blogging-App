@@ -8,9 +8,11 @@ import jwt from 'jsonwebtoken'
 import cors from 'cors'
 import multer from 'multer'
 import admin from 'firebase-admin'
+import { Client } from '@notionhq/client';
 import { getAuth } from 'firebase-admin/auth'
 import serviceAccountKey from './blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };
 import Blog from './Schema/Blog.js';
+import axios from 'axios';
 
 const app = express()
 
@@ -268,6 +270,26 @@ app.post("/google-auth", upload.none(), async (req, res) => {
         })
         .catch((error) => {
             return res.status(500).json({ message: "Failed to authenticate with google, try with another account!", error: error.message })
+        })
+})
+
+app.get('/latest-blogs', (req, res) => {
+    let maxLimit = 5;
+
+    Blog.find({ draft: false })
+        .populate("author", "personal_info.profile_img personal_info.username personal_info.fullname -_id")
+        .sort({ "publishedAt": -1 })
+        .select("blog_id title des banner activity tags publishedAt -_id")
+        .limit(maxLimit)
+        .then(blogs => {
+            return res.status(200).json({
+                blogs
+            })
+        })
+        .catch(error => {
+            return res.status(500).json({
+                message: error.message
+            })
         })
 })
 
