@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const filterPaginationData = async ({ create_new_arr = false, state, data, page, countRoute, data_to_send }) => {
+export const filterPaginationData = async ({ create_new_arr = false, state, data, page, countRoute, data_to_send = {} }) => {
 
     let obj;
 
@@ -10,7 +10,7 @@ export const filterPaginationData = async ({ create_new_arr = false, state, data
 
         await axios.post(import.meta.env.VITE_SERVER_URL + countRoute, data_to_send)
         .then(({ data: { totalDocs } }) => {
-            obj = { results: data, page:1, totalDocs }
+            obj = { results: data, page: 1, totalDocs }
         })
         .catch(error => {
             console.log(error)
