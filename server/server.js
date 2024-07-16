@@ -325,9 +325,15 @@ app.get('/trending-blogs', (req, res) => {
 })
 
 app.post('/search-blogs', (req, res) => {
-    let { tag, page } = req.body;
+    let { tag, page, query } = req.body;
 
-    let findQuery = { tags: tag, draft: false };
+    let findQuery;
+
+    if(tag){
+        findQuery = { tags: tag, draft: false }
+    } else {
+        findQuery = { draft: false, title: new RegExp(query, 'i')}
+    }
 
     let maxLimit = 5;
 
@@ -350,9 +356,15 @@ app.post('/search-blogs', (req, res) => {
 })
 
 app.post('/search-blogs-count', (req, res) => {
-    let { tag } = req.body;
+    let { tag, query } = req.body;
 
-    let findQuery = { tags: tag, draft: false }
+    let findQuery;
+
+    if(tag){
+        findQuery = { tags: tag, draft: false }
+    } else {
+        findQuery = { draft: false, title: new RegExp(query, 'i')}
+    }
     
     Blog.countDocuments(findQuery)
     .then(count => {
