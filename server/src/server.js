@@ -1,8 +1,8 @@
 import express, { json } from 'express'
 import dotenv from 'dotenv'
 import bcrypt from 'bcrypt'
-import User from './Schema/User.js';
-import connectDB from './config/db.js';
+import User from '../Schema/User.js'
+import connectDB from '../config/db.js'
 import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken'
 import cors from 'cors'
@@ -10,8 +10,8 @@ import multer from 'multer'
 import admin from 'firebase-admin'
 import { Client } from '@notionhq/client';
 import { getAuth } from 'firebase-admin/auth'
-import serviceAccountKey from './blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };
-import Blog from './Schema/Blog.js';
+import serviceAccountKey from '../blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json'
+import Blog from '../Schema/Blog.js';
 import axios from 'axios';
 
 const app = express()
