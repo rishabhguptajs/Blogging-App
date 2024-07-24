@@ -10,7 +10,7 @@ import multer from 'multer'
 import admin from 'firebase-admin'
 import { Client } from '@notionhq/client';
 import { getAuth } from 'firebase-admin/auth'
-import serviceAccountKey from '../blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json'
+import serviceAccountKey from '../blog-app-9ffa1-firebase-adminsdk-9vre4-4132d58f69.json' assert { type: "json" };
 import Blog from '../Schema/Blog.js';
 import axios from 'axios';
 
